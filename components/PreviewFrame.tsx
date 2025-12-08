@@ -3,14 +3,9 @@ import React, { useEffect, useRef, useState, memo } from "react";
 import { createPortal } from "react-dom";
 import { UI_REGISTRY } from "@/components/ui-registry";
 
-declare global {
-    interface Window {
-        DefaultExport?: any;
-        LastExportedComponent?: any;
-    }
-}
-
-// --- CSS ІН'ЄКЦІЯ (ВИПРАВЛЯЄ КАЛЕНДАР, МОДАЛКИ, ШРИФТИ) ---
+// --- ВБУДОВАНІ СТИЛІ ---
+// Тут ми вручну налаштовуємо поведінку модалки, щоб вона працювала ідеально
+// навіть якщо Tailwind CDN не встигає підхопити динамічні класи.
 const SHADCN_STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -37,74 +32,88 @@ const SHADCN_STYLES = `
         --radius: 0.5rem;
     }
 
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
-    body { font-family: 'Inter', sans-serif; overflow-x: hidden; overflow-y: auto; background-color: white; padding: 1rem; }
-    
-    /* --- FIX: CALENDAR (RDP) --- */
-    .rdp {
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: white; 
         margin: 0;
-        position: relative;
-        z-index: 50;
+        padding: 1rem;
+        width: 100vw;
+        min-height: 100vh;
+        overflow-x: hidden; 
+    }
+
+    /* --- МОДАЛЬНЕ ВІКНО (Critical Fix) --- */
+    /* Базові стилі для всіх розмірів */
+    [data-slot="dialog-content"],
+    div[role="dialog"][data-state] {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 50 !important;
+        
+        /* Мобільна поведінка за замовчуванням */
+        width: 95% !important;
+        max-width: 100% !important; 
+        margin: 0 auto;
+        
         background-color: white;
         border-radius: var(--radius);
-        padding: 10px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .rdp-month { background-color: white; }
-    .rdp-day_selected:not([disabled]) { 
-        background-color: hsl(var(--primary)); 
-        color: hsl(var(--primary-foreground));
-    }
-    
-    /* --- FIX: POPOVER/DROPDOWN --- */
-    [data-radix-popper-content-wrapper] {
-        z-index: 100 !important;
-        background-color: white;
-    }
-
-    /* --- FIX: DIALOG/MODAL --- */
-    /* ВИПРАВЛЕННЯ: Додано "div" та "data-state" для підвищення специфічності (Specificity Wars).
-       Це гарантує, що наші стилі переб'ють Tailwind клас ".w-full", який є у компоненті.
-    */
-    div[role="dialog"][data-state], 
-    [data-radix-popper-content-wrapper] [role="dialog"] {
-        position: fixed;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        z-index: 51;
-        
-        /* Примусові розміри */
-        width: 90% !important; 
-        max-width: 520px !important;
-        
-        background-color: white;
         border: 1px solid hsl(var(--border));
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        max-height: 90vh;
-        overflow-y: auto;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
-    
-    /* Overlay */
-    [data-state="open"] + div, [data-state="open"] > .fixed.inset-0 {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 50;
-        backdrop-filter: blur(1px);
-    }
-    
-    /* Animations */
-    @keyframes enter { from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-    .animate-in { animation: enter 0.2s ease-out forwards; }
 
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+    /* Адаптивність: Якщо ширина iframe > 640px, обмежуємо ширину */
+    @media (min-width: 640px) {
+        [data-slot="dialog-content"],
+        div[role="dialog"][data-state] {
+            width: 100% !important;
+            max-width: 520px !important; /* Ваше бажане обмеження */
+        }
+        
+        /* Виняток для галереї (якщо клас max-w-6xl присутній, дозволяємо ширше) */
+        [data-slot="dialog-content"].max-w-6xl {
+            max-width: 72rem !important; /* 6xl = 72rem */
+        }
+    }
+
+    /* Затемнення фону */
+    [data-slot="dialog-overlay"],
+    div[data-state="open"] + div.fixed.inset-0 {
+        position: fixed !important;
+        inset: 0 !important;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 49 !important;
+        backdrop-filter: blur(2px);
+    }
+
+    .rdp { margin: 0; position: relative; z-index: 50; }
+    [data-radix-popper-content-wrapper] { z-index: 100 !important; }
 `;
 
-const IFRAME_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><style>${SHADCN_STYLES}</style><script>window.tailwind={config:{corePlugins:{preflight:true},theme:{extend:{colors:{border:"hsl(var(--border))",input:"hsl(var(--input))",ring:"hsl(var(--ring))",background:"hsl(var(--background))",foreground:"hsl(var(--foreground))",primary:{DEFAULT:"hsl(var(--primary))",foreground:"hsl(var(--primary-foreground))"},secondary:{DEFAULT:"hsl(var(--secondary))",foreground:"hsl(var(--secondary-foreground))"},destructive:{DEFAULT:"hsl(var(--destructive))",foreground:"hsl(var(--destructive-foreground))"},muted:{DEFAULT:"hsl(var(--muted))",foreground:"hsl(var(--muted-foreground))"},accent:{DEFAULT:"hsl(var(--accent))",foreground:"hsl(var(--accent-foreground))"},popover:{DEFAULT:"hsl(var(--popover))",foreground:"hsl(var(--popover-foreground))"},card:{DEFAULT:"hsl(var(--card))",foreground:"hsl(var(--card-foreground))"}},borderRadius:{lg:"var(--radius)",md:"calc(var(--radius) - 2px)",sm:"calc(var(--radius) - 4px)"}}}}}</script><script>document.addEventListener('click',function(e){const link=e.target.closest('a');if(!link)return;const href=link.getAttribute('href');e.preventDefault();if(href&&href.startsWith('#')){const id=href.substring(1);const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}else{console.log('🔒 Nav blocked:',href)}},true);</script></head><body><div id="root"></div></body></html>`;
+const IFRAME_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>${SHADCN_STYLES}</style>
+    <script>
+        window.tailwind = {
+            config: {
+                corePlugins: { preflight: true },
+                theme: {
+                    extend: {
+                        colors: { border: "hsl(var(--border))", input: "hsl(var(--input))", ring: "hsl(var(--ring))", background: "hsl(var(--background))", foreground: "hsl(var(--foreground))", primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" }, secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" }, destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" }, muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" }, accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" }, popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" }, card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" } },
+                        borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body><div id="root"></div></body>
+</html>`;
 
 interface PreviewProps {
     code: string;
@@ -129,38 +138,70 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
         e: React.SyntheticEvent<HTMLIFrameElement, Event>
     ) => {
         const doc = e.currentTarget.contentDocument;
-        if (doc?.getElementById("root")) {
-            setMountNode(doc.getElementById("root"));
-            setIframeReady(true);
+        if (doc) {
+            // @ts-ignore
+            e.currentTarget.contentWindow.PreviewUI = UI_REGISTRY;
+            // @ts-ignore
+            e.currentTarget.contentWindow.React = UI_REGISTRY.React;
+
+            const root = doc.getElementById("root");
+            if (root) {
+                setMountNode(root);
+                setIframeReady(true);
+            }
         }
     };
 
+    // Авто-визначення завантаження
     useEffect(() => {
-        if (!code || !iframeReady) return;
+        const iframe = iframeRef.current;
+        if (
+            iframe &&
+            iframe.contentDocument &&
+            !iframeReady &&
+            iframe.contentDocument.readyState === "complete"
+        ) {
+            // @ts-ignore
+            if (iframe.contentWindow) {
+                // @ts-ignore
+                iframe.contentWindow.PreviewUI = UI_REGISTRY;
+                // @ts-ignore
+                iframe.contentWindow.React = UI_REGISTRY.React;
+            }
+            const root = iframe.contentDocument.getElementById("root");
+            if (root) {
+                setMountNode(root);
+                setIframeReady(true);
+            }
+        }
+    }, []);
+
+    // Виконання коду
+    useEffect(() => {
+        if (!code || !iframeReady || !mountNode || !iframeRef.current) return;
+        const win = iframeRef.current.contentWindow as any;
+        if (!win) return;
 
         try {
             setError(null);
-            // @ts-ignore
-            window.DefaultExport = null;
-            // @ts-ignore
-            window.LastExportedComponent = null;
+            win.DefaultExport = undefined;
+            win.LastExportedComponent = undefined;
 
-            const func = new Function(code);
-            func();
+            // Виконуємо код
+            win.eval(code);
 
-            // @ts-ignore
-            const Exported =
-                window.DefaultExport || window.LastExportedComponent;
+            const Exported = win.DefaultExport || win.LastExportedComponent;
+
             if (Exported) {
                 setComponent(() => Exported);
             } else {
-                console.warn("No export found in code");
+                console.warn("No export found");
             }
         } catch (err: any) {
-            console.error("Eval Error:", err);
+            console.error("Execution Error:", err);
             setError(err.message);
         }
-    }, [code, iframeReady, renderKey]);
+    }, [code, iframeReady, renderKey, mountNode]);
 
     return (
         <div className="w-full h-full relative bg-white isolate">
@@ -170,14 +211,13 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
                 onLoad={handleIframeLoad}
                 className="w-full h-full border-0 absolute inset-0"
                 title="preview"
-                sandbox="allow-scripts allow-same-origin allow-modals allow-popups"
+                sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-forms"
             />
             {error && (
                 <div className="absolute top-0 left-0 right-0 bg-red-500 text-white p-2 text-xs font-mono z-50">
                     {error}
                 </div>
             )}
-
             {mountNode &&
                 Component &&
                 createPortal(
