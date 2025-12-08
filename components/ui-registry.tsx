@@ -1,4 +1,6 @@
 // AUTOMATICALLY GENERATED
+'use client'
+
 import * as React from "react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,20 +63,21 @@ import * as ToggleGroupModule from "@/components/ui/toggle-group";
 import * as ToggleModule from "@/components/ui/toggle";
 import * as TooltipModule from "@/components/ui/tooltip";
 
+// --- UI REGISTRY ---
 export const UI_REGISTRY = {
   cn,
   React,
   LucideIcons,
   FramerMotion,
 
-  // 1. Іконки
+  // --- Lucide Icons ---
   ...Object.keys(LucideIcons).reduce((acc, key) => {
     // @ts-ignore
     acc[key] = LucideIcons[key];
     return acc;
   }, {} as any),
 
-  // --- UI Компоненти ---
+  // --- UI Components ---
   Accordion: AccordionModule.Accordion,
   AccordionItem: AccordionModule.AccordionItem,
   AccordionTrigger: AccordionModule.AccordionTrigger,
@@ -103,7 +106,7 @@ export const UI_REGISTRY = {
   Calendar: CalendarModule.Calendar,
   Card: CardModule.Card,
   Carousel: CarouselModule.Carousel,
-  Chart: ChartModule.ChartStyle, // <- Зміна Chart
+  Chart: ChartModule.ChartStyle,       // <-- виправлено
   Checkbox: CheckboxModule.Checkbox,
   Collapsible: CollapsibleModule.Collapsible,
   Command: CommandModule.Command,
@@ -116,7 +119,7 @@ export const UI_REGISTRY = {
   Form: FormModule.Form,
   HoverCard: HoverCardModule.HoverCard,
   InputGroup: InputGroupModule.InputGroup,
-  InputOtp: InputOtpModule.InputOTP, // <- Зміна InputOtp
+  InputOtp: InputOtpModule.InputOTP,   // <-- виправлено
   Input: InputModule.Input,
   Item: ItemModule.Item,
   Kbd: KbdModule.Kbd,
@@ -127,7 +130,7 @@ export const UI_REGISTRY = {
   Popover: PopoverModule.Popover,
   Progress: ProgressModule.Progress,
   RadioGroup: RadioGroupModule.RadioGroup,
-  Resizable: ResizableModule.Resizable,
+  Resizable: ResizableModule.ResizablePanel, // <-- виправлено
   ScrollArea: ScrollAreaModule.ScrollArea,
   Select: SelectModule.Select,
   Separator: SeparatorModule.Separator,
@@ -135,7 +138,7 @@ export const UI_REGISTRY = {
   Sidebar: SidebarModule.Sidebar,
   Skeleton: SkeletonModule.Skeleton,
   Slider: SliderModule.Slider,
-  Sonner: SonnerModule.Sonner,
+  Sonner: SonnerModule.Toaster,              // <-- виправлено
   Spinner: SpinnerModule.Spinner,
   Switch: SwitchModule.Switch,
   Table: TableModule.Table,
