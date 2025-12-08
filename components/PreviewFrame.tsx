@@ -3,6 +3,13 @@ import React, { useEffect, useRef, useState, memo } from "react";
 import { createPortal } from "react-dom";
 import { UI_REGISTRY } from "@/components/ui-registry";
 
+declare global {
+    interface Window {
+        DefaultExport?: any;
+        LastExportedComponent?: any;
+    }
+}
+
 // --- CSS ІН'ЄКЦІЯ (ВИПРАВЛЯЄ КАЛЕНДАР, МОДАЛКИ, ШРИФТИ) ---
 const SHADCN_STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
