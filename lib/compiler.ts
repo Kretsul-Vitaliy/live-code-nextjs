@@ -19,14 +19,14 @@ const RemoveUseClientPlugin = () => ({
   },
 });
 
-// 2. Плагін для трансформації імпортів
-const TransformImportsToRegistryPlugin = (_opts: any) => ({
+// 2. Плагін для трансформації імпортів (ВИПРАВЛЕНО: отримуємо 'types' як 't' з аргументів)
+const TransformImportsToRegistryPlugin = ({ types: t }: any) => ({
   visitor: {
     Program: {
       exit(path: any) {
         path.scope.crawl();
+        // Якщо React не імпортовано, додаємо його глобально з window.PreviewUI
         if (!path.scope.hasBinding("React")) {
-          const t = (Babel as any).types;
           const reactDeclaration = t.variableDeclaration("const", [
             t.variableDeclarator(
               t.identifier("React"),
@@ -41,7 +41,7 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
       },
     },
     ImportDeclaration(path: any) {
-      const t = (Babel as any).types;
+      // Видаляємо імпорти типів
       if (path.node.importKind === "type") {
         path.remove();
         return;
@@ -52,13 +52,19 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
       let memberExpression: any = previewUIExpression;
       let isReact = false;
 
+      // Логіка мапінгу бібліотек
       if (source === "react") isReact = true;
       else if (source === "lucide-react") memberExpression = t.memberExpression(previewUIExpression, t.identifier("LucideIcons"));
       else if (source === "framer-motion") memberExpression = t.memberExpression(previewUIExpression, t.identifier("FramerMotion"));
       else if (source === "next/image") memberExpression = t.memberExpression(previewUIExpression, t.identifier("Image"));
       else if (source === "next/link") memberExpression = t.memberExpression(previewUIExpression, t.identifier("Link"));
+      // Дозволяємо локальні імпорти UI компонентів проходити через реєстр
       else if (source.startsWith("@/components/ui/") || source === "@/lib/utils" || source === "@radix-ui/react-slot") memberExpression = previewUIExpression;
-      else { path.remove(); return; }
+      else { 
+        // Видаляємо невідомі імпорти, щоб не ламати виконання
+        path.remove(); 
+        return; 
+      }
 
       const replacementDeclarators: any[] = [];
       const namedImports: any[] = [];
@@ -68,6 +74,7 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
         if (isReact && specifier.local.name === "JSX") return;
 
         if (t.isImportSpecifier(specifier)) {
+          // import { Button } from ...
           namedImports.push(
             t.objectProperty(
               t.identifier(specifier.imported.name),
@@ -77,8 +84,10 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
             )
           );
         } else if (t.isImportDefaultSpecifier(specifier)) {
+          // import React from ...
           replacementDeclarators.push(t.variableDeclarator(t.identifier(specifier.local.name), memberExpression));
         } else if (t.isImportNamespaceSpecifier(specifier)) {
+          // import * as React from ...
           replacementDeclarators.push(t.variableDeclarator(t.identifier(specifier.local.name), memberExpression));
         }
       });
@@ -88,7 +97,7 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
       }
 
       if (replacementDeclarators.length > 0) {
-        path.replaceWithMultiple(replacementDeclarators.map((decl) => t.variableDeclaration("const", [decl])));
+        path.replaceWithMultiple(replacementDeclarators.map((decl: any) => t.variableDeclaration("const", [decl])));
       } else {
         path.remove();
       }
@@ -96,11 +105,10 @@ const TransformImportsToRegistryPlugin = (_opts: any) => ({
   },
 });
 
-// 3. Плагін для обробки експортів
-const HandleExportsPlugin = (_opts: any) => ({
+// 3. Плагін для обробки експортів (ВИПРАВЛЕНО: отримуємо 'types' як 't')
+const HandleExportsPlugin = ({ types: t }: any) => ({
   visitor: {
     ExportDefaultDeclaration(path: any) {
-      const t = (Babel as any).types;
       const decl = path.node.declaration;
       if (t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl)) {
         if (decl.id) {
@@ -134,13 +142,13 @@ const HandleExportsPlugin = (_opts: any) => ({
       }
     },
     ExportNamedDeclaration(path: any) {
-      const t = (Babel as any).types;
       if (path.node.declaration) {
         const decl = path.node.declaration;
         path.replaceWith(decl);
         let id = null;
         if (t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl)) id = decl.id;
         else if (t.isVariableDeclaration(decl) && decl.declarations.length > 0) id = decl.declarations[0].id;
+        
         if (id) {
           const assignment = t.expressionStatement(
             t.assignmentExpression(
@@ -172,7 +180,7 @@ export const compileCode = (code: string) => {
       ],
       plugins: [
         RemoveUseClientPlugin,
-        TransformImportsToRegistryPlugin,
+        TransformImportsToRegistryPlugin, // Тепер цей плагін коректно ініціалізується з types
         HandleExportsPlugin,
       ],
     });
