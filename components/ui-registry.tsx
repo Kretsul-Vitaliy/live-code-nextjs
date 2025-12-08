@@ -3,6 +3,7 @@ import * as React from "react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as FramerMotion from "framer-motion";
+
 // --- IMPORTS ---
 import * as AccordionModule from "@/components/ui/accordion";
 import * as AlertDialogModule from "@/components/ui/alert-dialog";
@@ -61,176 +62,111 @@ import * as ToggleModule from "@/components/ui/toggle";
 import * as TooltipModule from "@/components/ui/tooltip";
 
 export const UI_REGISTRY = {
-    cn,
-    React,
-    LucideIcons,
-    FramerMotion,
-    // 1. Спочатку іконки (найнижчий пріоритет)
-    ...Object.keys(LucideIcons).reduce((acc, key) => {
-        // @ts-ignore
-        acc[key] = LucideIcons[key];
-        return acc;
-    }, {} as any),
-    ...AccordionModule,
-    Accordion: AccordionModule || AccordionModule.Accordion,
-    ...AlertDialogModule,
-    AlertDialog: AlertDialogModule.default || AlertDialogModule.AlertDialog,
-    ...AlertModule,
-    Alert: AlertModule.default || AlertModule.Alert,
-    ...AspectRatioModule,
-    AspectRatio: AspectRatioModule.default || AspectRatioModule.AspectRatio,
-    ...AvatarModule,
-    Avatar: AvatarModule.default || AvatarModule.Avatar,
-    ...BadgeModule,
-    Badge: BadgeModule.default || BadgeModule.Badge,
-    ...BreadcrumbModule,
-    Breadcrumb: BreadcrumbModule.default || BreadcrumbModule.Breadcrumb,
-    ...ButtonGroupModule,
-    ButtonGroup: ButtonGroupModule.default || ButtonGroupModule.ButtonGroup,
-    ...ButtonModule,
-    Button: ButtonModule.default || ButtonModule.Button,
-    ...CalendarModule,
-    Calendar: CalendarModule.default || CalendarModule.Calendar,
-    ...CardModule,
-    Card: CardModule.default || CardModule.Card,
-    ...CarouselModule,
-    Carousel: CarouselModule.default || CarouselModule.Carousel,
-    ...ChartModule,
-    Chart: ChartModule.default || ChartModule.Chart,
-    ...CheckboxModule,
-    Checkbox: CheckboxModule.default || CheckboxModule.Checkbox,
-    ...CollapsibleModule,
-    Collapsible: CollapsibleModule.default || CollapsibleModule.Collapsible,
-    ...CommandModule,
-    Command: CommandModule.default || CommandModule.Command,
-    ...ContextMenuModule,
-    ContextMenu: ContextMenuModule.default || ContextMenuModule.ContextMenu,
-    ...DialogModule,
-    Dialog: DialogModule.default || DialogModule.Dialog,
-    ...DrawerModule,
-    Drawer: DrawerModule.default || DrawerModule.Drawer,
-    ...DropdownMenuModule,
-    DropdownMenu: DropdownMenuModule.default || DropdownMenuModule.DropdownMenu,
-    ...EmptyModule,
-    Empty: EmptyModule.default || EmptyModule.Empty,
-    ...FieldModule,
-    Field: FieldModule.default || FieldModule.Field,
-    ...FormModule,
-    Form: FormModule.default || FormModule.Form,
-    ...HoverCardModule,
-    HoverCard: HoverCardModule.default || HoverCardModule.HoverCard,
-    ...InputGroupModule,
-    InputGroup: InputGroupModule.default || InputGroupModule.InputGroup,
-    ...InputOtpModule,
-    InputOtp: InputOtpModule.default || InputOtpModule.InputOtp,
-    ...InputModule,
-    Input: InputModule.default || InputModule.Input,
-    ...ItemModule,
-    Item: ItemModule.default || ItemModule.Item,
-    ...KbdModule,
-    Kbd: KbdModule.default || KbdModule.Kbd,
-    ...LabelModule,
-    Label: LabelModule.default || LabelModule.Label,
-    ...MenubarModule,
-    Menubar: MenubarModule.default || MenubarModule.Menubar,
-    ...NavigationMenuModule,
-    NavigationMenu: NavigationMenuModule.default || NavigationMenuModule.NavigationMenu,
-    ...PaginationModule,
-    Pagination: PaginationModule.default || PaginationModule.Pagination,
-    ...PopoverModule,
-    Popover: PopoverModule.default || PopoverModule.Popover,
-    ...ProgressModule,
-    Progress: ProgressModule.default || ProgressModule.Progress,
-    ...RadioGroupModule,
-    RadioGroup: RadioGroupModule.default || RadioGroupModule.RadioGroup,
-    ...ResizableModule,
-    Resizable: ResizableModule.default || ResizableModule.Resizable,
-    ...ScrollAreaModule,
-    ScrollArea: ScrollAreaModule.default || ScrollAreaModule.ScrollArea,
-    ...SelectModule,
-    Select: SelectModule.default || SelectModule.Select,
-    ...SeparatorModule,
-    Separator: SeparatorModule.default || SeparatorModule.Separator,
-    ...SheetModule,
-    Sheet: SheetModule.default || SheetModule.Sheet,
-    ...SidebarModule,
-    Sidebar: SidebarModule.default || SidebarModule.Sidebar,
-    ...SkeletonModule,
-    Skeleton: SkeletonModule.default || SkeletonModule.Skeleton,
-    ...SliderModule,
-    Slider: SliderModule.default || SliderModule.Slider,
-    ...SonnerModule,
-    Sonner: SonnerModule.default || SonnerModule.Sonner,
-    ...SpinnerModule,
-    Spinner: SpinnerModule.default || SpinnerModule.Spinner,
-    ...SwitchModule,
-    Switch: SwitchModule.default || SwitchModule.Switch,
-    ...TableModule,
-    Table: TableModule.default || TableModule.Table,
-    ...TabsModule,
-    Tabs: TabsModule.default || TabsModule.Tabs,
-    ...TextareaModule,
-    Textarea: TextareaModule.default || TextareaModule.Textarea,
-    ...ToastModule,
-    Toast: ToastModule.default || ToastModule.Toast,
-    ...ToasterModule,
-    Toaster: ToasterModule.default || ToasterModule.Toaster,
-    ...ToggleGroupModule,
-    ToggleGroup: ToggleGroupModule.default || ToggleGroupModule.ToggleGroup,
-    ...ToggleModule,
-    Toggle: ToggleModule.default || ToggleModule.Toggle,
-    ...TooltipModule,
-    Tooltip: TooltipModule.default || TooltipModule.Tooltip,
+  cn,
+  React,
+  LucideIcons,
+  FramerMotion,
 
-   // Next.js Image Override
-    Image: (props: any) => {
-        // 1. Деструктуризуємо onLoadingComplete, щоб він не потрапив у ...rest
-        const { src, alt, fill, width, height, style, className, onClick, priority, loading, onLoadingComplete, onLoad, ...rest } = props;
-        
-        let styles = { ...style };
-        if (fill) {
-            styles = { ...styles, position: 'absolute', height: '100%', width: '100%', inset: 0, objectFit: 'cover', color: 'transparent' };
-        }
+  // 1. Іконки
+  ...Object.keys(LucideIcons).reduce((acc, key) => {
+    // @ts-ignore
+    acc[key] = LucideIcons[key];
+    return acc;
+  }, {} as any),
 
-        // 2. Створюємо обробник для native onLoad
-        const handleLoad = (e: any) => {
-            // Якщо передали звичайний onLoad
-            if (onLoad) onLoad(e);
+  // --- UI Компоненти ---
+  Accordion: AccordionModule.Accordion,
+  AccordionItem: AccordionModule.AccordionItem,
+  AccordionTrigger: AccordionModule.AccordionTrigger,
+  AccordionContent: AccordionModule.AccordionContent,
 
-            // Якщо передали Next.js onLoadingComplete
-            if (onLoadingComplete) {
-                const img = e.target;
-                // Next.js повертає об'єкт з розмірами
-                onLoadingComplete({
-                    naturalWidth: img.naturalWidth,
-                    naturalHeight: img.naturalHeight
-                });
-            }
-        };
+  AlertDialog: AlertDialogModule.AlertDialog,
+  AlertDialogTrigger: AlertDialogModule.AlertDialogTrigger,
+  AlertDialogContent: AlertDialogModule.AlertDialogContent,
+  AlertDialogHeader: AlertDialogModule.AlertDialogHeader,
+  AlertDialogFooter: AlertDialogModule.AlertDialogFooter,
+  AlertDialogTitle: AlertDialogModule.AlertDialogTitle,
+  AlertDialogDescription: AlertDialogModule.AlertDialogDescription,
+  AlertDialogAction: AlertDialogModule.AlertDialogAction,
+  AlertDialogCancel: AlertDialogModule.AlertDialogCancel,
 
-        // ТУТ БУЛА ПОМИЛКА: iframeReact не існує. Використовуємо звичайний JSX.
-        return <img 
-            src={src} 
-            alt={alt || ""} 
-            className={cn(className)} 
-            style={styles}
-            width={fill ? undefined : width} 
-            height={fill ? undefined : height}
-            loading={priority ? "eager" : "lazy"} 
-            decoding="async" 
-            onClick={onClick}
-            onLoad={handleLoad} 
-            {...rest}
-        />;
-    },
+  Alert: AlertModule.Alert,
+  AlertTitle: AlertModule.AlertTitle,
+  AlertDescription: AlertModule.AlertDescription,
 
+  AspectRatio: AspectRatioModule.AspectRatio,
+  Avatar: AvatarModule.Avatar,
+  Badge: BadgeModule.Badge,
+  Breadcrumb: BreadcrumbModule.Breadcrumb,
+  ButtonGroup: ButtonGroupModule.ButtonGroup,
+  Button: ButtonModule.Button,
+  Calendar: CalendarModule.Calendar,
+  Card: CardModule.Card,
+  Carousel: CarouselModule.Carousel,
+  Chart: ChartModule.Chart,
+  Checkbox: CheckboxModule.Checkbox,
+  Collapsible: CollapsibleModule.Collapsible,
+  Command: CommandModule.Command,
+  ContextMenu: ContextMenuModule.ContextMenu,
+  Dialog: DialogModule.Dialog,
+  Drawer: DrawerModule.Drawer,
+  DropdownMenu: DropdownMenuModule.DropdownMenu,
+  Empty: EmptyModule.Empty,
+  Field: FieldModule.Field,
+  Form: FormModule.Form,
+  HoverCard: HoverCardModule.HoverCard,
+  InputGroup: InputGroupModule.InputGroup,
+  InputOtp: InputOtpModule.InputOtp,
+  Input: InputModule.Input,
+  Item: ItemModule.Item,
+  Kbd: KbdModule.Kbd,
+  Label: LabelModule.Label,
+  Menubar: MenubarModule.Menubar,
+  NavigationMenu: NavigationMenuModule.NavigationMenu,
+  Pagination: PaginationModule.Pagination,
+  Popover: PopoverModule.Popover,
+  Progress: ProgressModule.Progress,
+  RadioGroup: RadioGroupModule.RadioGroup,
+  Resizable: ResizableModule.Resizable,
+  ScrollArea: ScrollAreaModule.ScrollArea,
+  Select: SelectModule.Select,
+  Separator: SeparatorModule.Separator,
+  Sheet: SheetModule.Sheet,
+  Sidebar: SidebarModule.Sidebar,
+  Skeleton: SkeletonModule.Skeleton,
+  Slider: SliderModule.Slider,
+  Sonner: SonnerModule.Sonner,
+  Spinner: SpinnerModule.Spinner,
+  Switch: SwitchModule.Switch,
+  Table: TableModule.Table,
+  Tabs: TabsModule.Tabs,
+  Textarea: TextareaModule.Textarea,
+  Toast: ToastModule.Toast,
+  Toaster: ToasterModule.Toaster,
+  ToggleGroup: ToggleGroupModule.ToggleGroup,
+  Toggle: ToggleModule.Toggle,
+  Tooltip: TooltipModule.Tooltip,
 
-// Next.js Link Override
-    Link: (props: any) => {
-        const { href, children, ...rest } = props;
-        // Ми просто рендеримо <a>.
-        // Глобальний скрипт в PreviewFrame перехопить клік і зробить скрол,
-        // якщо href починається з #.
-        return <a href={href} {...rest}>{children}</a>;
-    },
+  // --- Next.js Image Override ---
+  Image: (props: any) => {
+    const { src, alt, fill, width, height, style, className, onClick, priority, onLoadingComplete, onLoad, ...rest } = props;
+    let styles = { ...style };
+    if (fill) {
+      styles = { ...styles, position: 'absolute', height: '100%', width: '100%', inset: 0, objectFit: 'cover', color: 'transparent' };
+    }
+    const handleLoad = (e: any) => {
+      if (onLoad) onLoad(e);
+      if (onLoadingComplete) {
+        const img = e.target;
+        onLoadingComplete({ naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
+      }
+    };
+    return <img src={src} alt={alt || ""} className={cn(className)} style={styles} width={fill ? undefined : width} height={fill ? undefined : height} loading={priority ? "eager" : "lazy"} decoding="async" onClick={onClick} onLoad={handleLoad} {...rest} />;
+  },
+
+  // --- Next.js Link Override ---
+  Link: (props: any) => {
+    const { href, children, ...rest } = props;
+    return <a href={href} {...rest}>{children}</a>;
+  },
 };
