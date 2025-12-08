@@ -72,7 +72,7 @@ export const UI_REGISTRY = {
         return acc;
     }, {} as any),
     ...AccordionModule,
-    Accordion: AccordionModule.default || AccordionModule.Accordion,
+    Accordion: AccordionModule || AccordionModule.Accordion,
     ...AlertDialogModule,
     AlertDialog: AlertDialogModule.default || AlertDialogModule.AlertDialog,
     ...AlertModule,
