@@ -103,7 +103,7 @@ export const UI_REGISTRY = {
   Calendar: CalendarModule.Calendar,
   Card: CardModule.Card,
   Carousel: CarouselModule.Carousel,
-  Chart: ChartModule.Chart,
+  Chart: ChartModule.ChartStyle, // <- Зміна Chart
   Checkbox: CheckboxModule.Checkbox,
   Collapsible: CollapsibleModule.Collapsible,
   Command: CommandModule.Command,
@@ -116,7 +116,7 @@ export const UI_REGISTRY = {
   Form: FormModule.Form,
   HoverCard: HoverCardModule.HoverCard,
   InputGroup: InputGroupModule.InputGroup,
-  InputOtp: InputOtpModule.InputOtp,
+  InputOtp: InputOtpModule.InputOTP, // <- Зміна InputOtp
   Input: InputModule.Input,
   Item: ItemModule.Item,
   Kbd: KbdModule.Kbd,
