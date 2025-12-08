@@ -4,6 +4,7 @@ import * as React from 'react'
 import { GripVerticalIcon } from 'lucide-react'
 // ВИПРАВЛЕННЯ: Додано імпорт ResizablePrimitive
 import * as ResizablePrimitive from "react-resizable-panels"
+import type { ImperativePanelHandle } from "react-resizable-panels";
 
 import { cn } from '@/lib/utils'
 
@@ -54,4 +55,5 @@ function ResizableHandle({
   )
 }
 
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle }
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+export type { ImperativePanelHandle };
