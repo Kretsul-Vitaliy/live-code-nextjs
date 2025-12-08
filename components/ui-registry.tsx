@@ -41,7 +41,7 @@ import * as MenubarModule from "@/components/ui/menubar";
 import * as NavigationMenuModule from "@/components/ui/navigation-menu";
 import * as PaginationModule from "@/components/ui/pagination";
 import * as PopoverModule from "@/components/ui/popover";
-import *s ProgressModule from "@/components/ui/progress";
+import *as ProgressModule from "@/components/ui/progress";
 import * as RadioGroupModule from "@/components/ui/radio-group";
 import * as ResizableModule from "@/components/ui/resizable";
 import * as ScrollAreaModule from "@/components/ui/scroll-area";
