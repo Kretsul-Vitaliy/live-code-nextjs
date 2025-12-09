@@ -85,6 +85,11 @@ const TransformImportsToRegistryPlugin = ({ types: t }: any) => ({
                     previewUIExpression,
                     t.identifier("Recharts") // Має збігатися з ключем в UI_REGISTRY
                 );
+            } else if (source === "zod") {
+                memberExpression = t.memberExpression(
+                    previewUIExpression,
+                    t.identifier("Zod") // Має збігатися з ключем в UI_REGISTRY
+                );
             } else if (source === "next/image") {
                 memberExpression = t.memberExpression(
                     previewUIExpression,

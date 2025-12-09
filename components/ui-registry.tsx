@@ -6,6 +6,7 @@ import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as FramerMotion from "framer-motion";
 import * as RechartsModule from "recharts";
+import * as ZodModule from "zod";
 
 // --- IMPORTS ---
 import * as AccordionModule from "@/components/ui/accordion";
@@ -69,6 +70,7 @@ export const UI_REGISTRY = {
     React,
     FramerMotion,
     Recharts: RechartsModule,
+    Zod: ZodModule,
     // ВАЖЛИВО: Додаємо весь об'єкт іконок для компілятора
     LucideIcons,
 
