@@ -80,6 +80,11 @@ const TransformImportsToRegistryPlugin = ({ types: t }: any) => ({
                     previewUIExpression,
                     t.identifier("FramerMotion")
                 );
+            } else if (source === "recharts") {
+                memberExpression = t.memberExpression(
+                    previewUIExpression,
+                    t.identifier("Recharts") // Має збігатися з ключем в UI_REGISTRY
+                );
             } else if (source === "next/image") {
                 memberExpression = t.memberExpression(
                     previewUIExpression,
