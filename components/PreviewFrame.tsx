@@ -67,7 +67,59 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         return this.props.children;
     }
 }
+// --- 1. КРИТИЧНИЙ CSS (Завантажується миттєво) ---
+// Це ті самі "стандартні класи", про які ви питали.
+// Вони гарантують, що контейнери мають розмір до того, як запуститься JS.
+const CORE_CSS = `
+    /* Скидання */
+    *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: #e5e7eb; }
+    html, body { height: 100%; width: 100%; margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; }
+    
+    /* Layout Helpers */
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    
+    /* --- ВИПРАВЛЕННЯ: ПРОСТІ КЛАСИ ДЛЯ ГРАФІКІВ --- */
+    /* Використовуємо прості назви без дужок, щоб уникнути помилок парсингу */
+    .chart-wrapper {
+        width: 100% !important;
+        height: 350px !important;
+        min-height: 350px !important;
+        display: block !important;
+        position: relative;
+    }
 
+    /* Shadcn Basics (без змін) */
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 3.9%;
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 90%;
+        --input: 240 5.9% 90%;
+        --ring: 240 10% 3.9%;
+        --radius: 0.5rem;
+    }
+`;
 // --- 2. СТИЛІ ТА HTML (Без змін) ---
 const SHADCN_STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -184,6 +236,7 @@ const IFRAME_HTML = `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>${CORE_CSS}</style>
     <style>${SHADCN_STYLES}</style>
     <script>
         window.tailwind = {
