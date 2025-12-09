@@ -90,6 +90,16 @@ const TransformImportsToRegistryPlugin = ({ types: t }: any) => ({
                     previewUIExpression,
                     t.identifier("Zod") // Має збігатися з ключем в UI_REGISTRY
                 );
+            } else if (source === "react-hook-form") {
+                memberExpression = t.memberExpression(
+                    previewUIExpression,
+                    t.identifier("ReactHookForm")
+                );
+            } else if (source === "@hookform/resolvers/zod") {
+                memberExpression = t.memberExpression(
+                    previewUIExpression,
+                    t.identifier("HookFormResolversZod")
+                );
             } else if (source === "next/image") {
                 memberExpression = t.memberExpression(
                     previewUIExpression,

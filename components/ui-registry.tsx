@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import * as FramerMotion from "framer-motion";
 import * as RechartsModule from "recharts";
 import * as ZodModule from "zod";
+import * as ReactHookForm from "react-hook-form";
+import * as HookFormResolversZod from "@hookform/resolvers/zod";
 
 // --- IMPORTS ---
 import * as AccordionModule from "@/components/ui/accordion";
@@ -71,6 +73,8 @@ export const UI_REGISTRY = {
     FramerMotion,
     Recharts: RechartsModule,
     Zod: ZodModule,
+    ReactHookForm: ReactHookForm,
+    HookFormResolversZod: HookFormResolversZod,
     // ВАЖЛИВО: Додаємо весь об'єкт іконок для компілятора
     LucideIcons,
 
