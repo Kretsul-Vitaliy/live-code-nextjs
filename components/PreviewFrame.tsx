@@ -1,11 +1,74 @@
 "use client";
-import React, { useEffect, useRef, useState, memo } from "react";
+import React, {
+    useEffect,
+    useRef,
+    useState,
+    memo,
+    Component,
+    ErrorInfo,
+    ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { UI_REGISTRY } from "@/components/ui-registry";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
-// --- ВБУДОВАНІ СТИЛІ ---
-// Тут ми вручну налаштовуємо поведінку модалки, щоб вона працювала ідеально
-// навіть якщо Tailwind CDN не встигає підхопити динамічні класи.
+// --- 1. ERROR BOUNDARY (Запобіжник від крашу всієї сторінки) ---
+interface ErrorBoundaryProps {
+    children: ReactNode;
+    resetKey: number; // Ключ для скидання стану помилки при зміні коду
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("Preview Component Crashed:", error, errorInfo);
+    }
+
+    componentDidUpdate(prevProps: ErrorBoundaryProps) {
+        // Якщо код змінився (новий renderKey), скидаємо помилку
+        if (prevProps.resetKey !== this.props.resetKey) {
+            this.setState({ hasError: false, error: null });
+        }
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md w-full shadow-sm">
+                        <div className="flex items-center gap-2 text-red-600 font-semibold mb-2 justify-center">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span>Runtime Error</span>
+                        </div>
+                        <p className="text-sm text-gray-700 font-mono text-left whitespace-pre-wrap break-words bg-white p-3 rounded border border-red-100 max-h-40 overflow-auto">
+                            {this.state.error?.message}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                            Check your browser console for full stack trace.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+// --- 2. СТИЛІ ТА HTML (Без змін) ---
 const SHADCN_STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -36,14 +99,17 @@ const SHADCN_STYLES = `
         font-family: 'Inter', sans-serif; 
         background-color: white; 
         margin: 0;
-        padding: 1rem;
+        padding: 0; /* Прибираємо padding для full-width */
         width: 100vw;
         min-height: 100vh;
         overflow-x: hidden; 
+        position: relative;
     }
 
-    /* --- МОДАЛЬНЕ ВІКНО (Critical Fix) --- */
-    /* Базові стилі для всіх розмірів */
+    /* --- МОДАЛЬНЕ ВІКНО FIX --- */
+    [data-radix-portal] { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+    [data-radix-portal] > * { pointer-events: auto; }
+
     [data-slot="dialog-content"],
     div[role="dialog"][data-state] {
         position: fixed !important;
@@ -51,33 +117,26 @@ const SHADCN_STYLES = `
         left: 50% !important;
         transform: translate(-50%, -50%) !important;
         z-index: 50 !important;
-        
-        /* Мобільна поведінка за замовчуванням */
         width: 95% !important;
         max-width: 100% !important; 
         margin: 0 auto;
-        
         background-color: white;
         border-radius: var(--radius);
         border: 1px solid hsl(var(--border));
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Адаптивність: Якщо ширина iframe > 640px, обмежуємо ширину */
     @media (min-width: 640px) {
         [data-slot="dialog-content"],
         div[role="dialog"][data-state] {
             width: 100% !important;
-            max-width: 520px !important; /* Ваше бажане обмеження */
+            max-width: 520px !important;
         }
-        
-        /* Виняток для галереї (якщо клас max-w-6xl присутній, дозволяємо ширше) */
         [data-slot="dialog-content"].max-w-6xl {
-            max-width: 72rem !important; /* 6xl = 72rem */
+            max-width: 72rem !important;
         }
     }
 
-    /* Затемнення фону */
     [data-slot="dialog-overlay"],
     div[data-state="open"] + div.fixed.inset-0 {
         position: fixed !important;
@@ -89,6 +148,34 @@ const SHADCN_STYLES = `
 
     .rdp { margin: 0; position: relative; z-index: 50; }
     [data-radix-popper-content-wrapper] { z-index: 100 !important; }
+
+    /* --- SHADCN ANIMATIONS (Polyfill for tailwindcss-animate in CDN) --- */
+    @keyframes enter {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes exit {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.95); }
+    }
+    
+    .animate-in { animation: enter 0.15s ease-out; }
+    .animate-out { animation: exit 0.15s ease-in; }
+    
+    .fade-in-0 { opacity: 0; animation-name: enter; }
+    .fade-out-0 { opacity: 1; animation-name: exit; }
+    
+    .zoom-in-95 { transform: scale(0.95); }
+    .zoom-out-95 { transform: scale(0.95); }
+    
+    /* Специфічні класи для Dialog з dialog.tsx */
+    [data-state="open"].animate-in {
+        animation: enter 0.2s ease-out forwards;
+    }
+    [data-state="closed"].animate-out {
+        animation: exit 0.2s ease-in forwards;
+    }
+        
 `;
 
 const IFRAME_HTML = `<!DOCTYPE html>
@@ -120,6 +207,7 @@ interface PreviewProps {
     renderKey: number;
 }
 
+// --- 3. ГОЛОВНИЙ КОМПОНЕНТ ---
 function PreviewFrame({ code, renderKey }: PreviewProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
@@ -129,21 +217,32 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
     );
     const [iframeReady, setIframeReady] = useState(false);
 
-    useEffect(() => {
-        // @ts-ignore
-        if (!window.PreviewUI) window.PreviewUI = UI_REGISTRY;
-    }, []);
+    // Функція для ін'єкції глобальних змінних
+    const injectGlobals = (win: any) => {
+        if (!win) return;
+        win.PreviewUI = UI_REGISTRY;
+
+        // ВАЖЛИВО: Робимо хуки доступними глобально, щоб працював код без import { useRef } from 'react'
+        win.React = UI_REGISTRY.React;
+        win.useState = UI_REGISTRY.React.useState;
+        win.useEffect = UI_REGISTRY.React.useEffect;
+        win.useRef = UI_REGISTRY.React.useRef;
+        win.useMemo = UI_REGISTRY.React.useMemo;
+        win.useCallback = UI_REGISTRY.React.useCallback;
+        win.useContext = UI_REGISTRY.React.useContext;
+        win.useReducer = UI_REGISTRY.React.useReducer;
+        win.useLayoutEffect = UI_REGISTRY.React.useLayoutEffect;
+    };
 
     const handleIframeLoad = (
         e: React.SyntheticEvent<HTMLIFrameElement, Event>
     ) => {
-        const doc = e.currentTarget.contentDocument;
-        if (doc) {
-            // @ts-ignore
-            e.currentTarget.contentWindow.PreviewUI = UI_REGISTRY;
-            // @ts-ignore
-            e.currentTarget.contentWindow.React = UI_REGISTRY.React;
+        const iframe = e.currentTarget;
+        const win = iframe.contentWindow;
+        const doc = iframe.contentDocument;
 
+        if (win && doc) {
+            injectGlobals(win);
             const root = doc.getElementById("root");
             if (root) {
                 setMountNode(root);
@@ -152,7 +251,7 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
         }
     };
 
-    // Авто-визначення завантаження
+    // Fallback для повторного завантаження
     useEffect(() => {
         const iframe = iframeRef.current;
         if (
@@ -161,13 +260,7 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
             !iframeReady &&
             iframe.contentDocument.readyState === "complete"
         ) {
-            // @ts-ignore
-            if (iframe.contentWindow) {
-                // @ts-ignore
-                iframe.contentWindow.PreviewUI = UI_REGISTRY;
-                // @ts-ignore
-                iframe.contentWindow.React = UI_REGISTRY.React;
-            }
+            injectGlobals(iframe.contentWindow);
             const root = iframe.contentDocument.getElementById("root");
             if (root) {
                 setMountNode(root);
@@ -176,7 +269,7 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
         }
     }, []);
 
-    // Виконання коду
+    // Виконання коду (Eval)
     useEffect(() => {
         if (!code || !iframeReady || !mountNode || !iframeRef.current) return;
         const win = iframeRef.current.contentWindow as any;
@@ -184,10 +277,12 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
 
         try {
             setError(null);
+
+            // Скидаємо попередні експорти
             win.DefaultExport = undefined;
             win.LastExportedComponent = undefined;
 
-            // Виконуємо код
+            // Виконуємо код у try-catch блоці (це ловить синтаксичні помилки та reference errors)
             win.eval(code);
 
             const Exported = win.DefaultExport || win.LastExportedComponent;
@@ -196,10 +291,13 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
                 setComponent(() => Exported);
             } else {
                 console.warn("No export found");
+                // Не ставимо помилку, можливо код просто пустий або ще пишеться
             }
         } catch (err: any) {
-            console.error("Execution Error:", err);
+            console.error("Eval Error:", err);
+            // Виводимо помилку гарно, а не крашимо додаток
             setError(err.message);
+            setComponent(null);
         }
     }, [code, iframeReady, renderKey, mountNode]);
 
@@ -213,17 +311,32 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
                 title="preview"
                 sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-forms"
             />
+
+            {/* Шар помилок Eval (Синтаксис) */}
             {error && (
-                <div className="absolute top-0 left-0 right-0 bg-red-500 text-white p-2 text-xs font-mono z-50">
-                    {error}
+                <div className="absolute inset-0 z-50 bg-white/95 flex items-start justify-center pt-20 p-4">
+                    <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span>Compilation Error</span>
+                        </div>
+                        <pre className="text-xs text-red-800 whitespace-pre-wrap break-words font-mono">
+                            {error}
+                        </pre>
+                    </div>
                 </div>
             )}
+
+            {/* Рендер через Portal + ErrorBoundary */}
             {mountNode &&
                 Component &&
+                !error &&
                 createPortal(
-                    <div key={renderKey} className="min-h-full">
-                        <Component />
-                    </div>,
+                    <ErrorBoundary resetKey={renderKey}>
+                        <div key={renderKey} className="min-h-full">
+                            <Component />
+                        </div>
+                    </ErrorBoundary>,
                     mountNode
                 )}
         </div>
