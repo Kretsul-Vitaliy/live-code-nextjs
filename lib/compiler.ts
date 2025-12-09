@@ -215,6 +215,8 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
             if (path.node.declaration) {
                 const decl = path.node.declaration;
                 path.replaceWith(decl);
+
+                // Логіка для пошуку імені компонента
                 let id = null;
                 if (t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl))
                     id = decl.id;
@@ -225,6 +227,7 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
                     id = decl.declarations[0].id;
 
                 if (id) {
+                    // 1. Реєструємо як LastExportedComponent (резерв)
                     const assignment = t.expressionStatement(
                         t.assignmentExpression(
                             "=",
@@ -236,6 +239,24 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
                         )
                     );
                     path.insertAfter(assignment);
+
+                    // 2. ВАЖЛИВО: Якщо ім'я компонента "App", "Page" або "Main" - робимо його дефолтним примусово
+                    // Це дозволяє писати "export function Page() {}" без default
+                    if (
+                        ["App", "Page", "Main", "Component"].includes(id.name)
+                    ) {
+                        const defaultAssignment = t.expressionStatement(
+                            t.assignmentExpression(
+                                "=",
+                                t.memberExpression(
+                                    t.identifier("window"),
+                                    t.identifier("DefaultExport")
+                                ),
+                                id
+                            )
+                        );
+                        path.insertAfter(defaultAssignment);
+                    }
                 }
             } else {
                 path.remove();
