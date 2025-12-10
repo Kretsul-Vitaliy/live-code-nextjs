@@ -141,14 +141,15 @@ const SHADCN_STYLES = `
         font-family: 'Inter', sans-serif; 
         background-color: white; 
         margin: 0;
-        padding: 0; /* Прибираємо padding для full-width */
         width: 100vw;
         min-height: 100vh;
         overflow-x: hidden; 
         position: relative;
     }
 
-    /* --- МОДАЛЬНЕ ВІКНО FIX --- */
+    /* --- МОДАЛЬНЕ ВІКНО FIX (ОНОВЛЕНИЙ) --- */
+    /* Тільки позиціонування! Жодних кольорів чи відступів тут. */
+    
     [data-radix-portal] { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
     [data-radix-portal] > * { pointer-events: auto; }
 
@@ -159,23 +160,20 @@ const SHADCN_STYLES = `
         left: 50% !important;
         transform: translate(-50%, -50%) !important;
         z-index: 50 !important;
-        width: 95% !important;
-        max-width: 100% !important; 
-        margin: 0 auto;
-        background-color: white;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--border));
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        
+        /* ВАЖЛИВО: Ми прибрали width, background, border, padding звідси.
+           Тепер Tailwind-класи (w-full, bg-background, p-6) будуть працювати коректно. */
+        width: 95%; 
+        max-width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
+    /* Медіа-запити залишаємо, але тільки для ширини */
     @media (min-width: 640px) {
         [data-slot="dialog-content"],
         div[role="dialog"][data-state] {
-            width: 100% !important;
-            max-width: 520px !important;
-        }
-        [data-slot="dialog-content"].max-w-6xl {
-            max-width: 72rem !important;
+            width: auto; /* Дозволяємо контенту визначати ширину або класам max-w-lg */
         }
     }
 
@@ -188,36 +186,17 @@ const SHADCN_STYLES = `
         backdrop-filter: blur(2px);
     }
 
-    .rdp { margin: 0; position: relative; z-index: 50; }
-    [data-radix-popper-content-wrapper] { z-index: 100 !important; }
-
-    /* --- SHADCN ANIMATIONS (Polyfill for tailwindcss-animate in CDN) --- */
-    @keyframes enter {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes exit {
-        from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0.95); }
-    }
-    
+    /* Анімації */
+    @keyframes enter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes exit { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
     .animate-in { animation: enter 0.15s ease-out; }
     .animate-out { animation: exit 0.15s ease-in; }
-    
     .fade-in-0 { opacity: 0; animation-name: enter; }
     .fade-out-0 { opacity: 1; animation-name: exit; }
-    
     .zoom-in-95 { transform: scale(0.95); }
     .zoom-out-95 { transform: scale(0.95); }
-    
-    /* Специфічні класи для Dialog з dialog.tsx */
-    [data-state="open"].animate-in {
-        animation: enter 0.2s ease-out forwards;
-    }
-    [data-state="closed"].animate-out {
-        animation: exit 0.2s ease-in forwards;
-    }
-        
+    [data-state="open"].animate-in { animation: enter 0.2s ease-out forwards; }
+    [data-state="closed"].animate-out { animation: exit 0.2s ease-in forwards; }
 `;
 // --- СКРИПТ АВТО-ФІКСУ ГРАФІКІВ ---
 // Цей скрипт працює ВСЕРЕДИНІ iframe.
