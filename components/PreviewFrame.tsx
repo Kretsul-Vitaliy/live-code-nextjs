@@ -10,14 +10,13 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { UI_REGISTRY } from "@/components/ui-registry";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
-// --- 1. ERROR BOUNDARY (Запобіжник від крашу всієї сторінки) ---
+// --- ERROR BOUNDARY ---
 interface ErrorBoundaryProps {
     children: ReactNode;
-    resetKey: number; // Ключ для скидання стану помилки при зміні коду
+    resetKey: number;
 }
-
 interface ErrorBoundaryState {
     hasError: boolean;
     error: Error | null;
@@ -28,50 +27,37 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         super(props);
         this.state = { hasError: false, error: null };
     }
-
-    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    static getDerivedStateFromError(error: Error) {
         return { hasError: true, error };
     }
-
-    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Preview Component Crashed:", error, errorInfo);
-    }
-
     componentDidUpdate(prevProps: ErrorBoundaryProps) {
-        // Якщо код змінився (новий renderKey), скидаємо помилку
-        if (prevProps.resetKey !== this.props.resetKey) {
+        if (prevProps.resetKey !== this.props.resetKey)
             this.setState({ hasError: false, error: null });
-        }
     }
-
     render() {
         if (this.state.hasError) {
             return (
                 <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md w-full shadow-sm">
-                        <div className="flex items-center gap-2 text-red-600 font-semibold mb-2 justify-center">
+                    <div className="bg-red-50 border border-red-200 rounded p-4 max-w-md w-full">
+                        <div className="text-red-600 font-semibold mb-2 flex items-center justify-center gap-2">
                             <AlertTriangle className="w-5 h-5" />
-                            <span>Runtime Error</span>
+                            Runtime Error
                         </div>
-                        <p className="text-sm text-gray-700 font-mono text-left whitespace-pre-wrap break-words bg-white p-3 rounded border border-red-100 max-h-40 overflow-auto">
+                        <p className="text-sm font-mono bg-white p-2 rounded border border-red-100 overflow-auto text-left">
                             {this.state.error?.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                            Check your browser console for full stack trace.
                         </p>
                     </div>
                 </div>
             );
         }
-
         return this.props.children;
     }
 }
-// --- 1. КРИТИЧНИЙ CSS (Завантажується миттєво) ---
-// Це ті самі "стандартні класи", про які ви питали.
-// Вони гарантують, що контейнери мають розмір до того, як запуститься JS.
+
+// --- СТИЛІ ---
 const CORE_CSS = `
-    /* Скидання */
+    *, ::before, ::after { box-sizing: border-box; }
+     /* Скидання */
     *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: #e5e7eb; }
     html, body { height: 100%; width: 100%; margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; }
     
@@ -119,8 +105,12 @@ const CORE_CSS = `
         --ring: 240 10% 3.9%;
         --radius: 0.5rem;
     }
+    #root { min-height: 100%; display: flex; flex-direction: column; }
+    
+    /* Критично для Recharts: дозволяємо контейнеру мати висоту навіть без контенту */
+    .recharts-responsive-container { min-height: 0 !important; }
 `;
-// --- 2. СТИЛІ ТА HTML (Без змін) ---
+
 const SHADCN_STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -229,15 +219,49 @@ const SHADCN_STYLES = `
     }
         
 `;
+// --- СКРИПТ АВТО-ФІКСУ ГРАФІКІВ ---
+// Цей скрипт працює ВСЕРЕДИНІ iframe.
+// Він змушує графік перемалюватися, коли Tailwind нарешті завантажить стилі.
+const CHART_FIX_SCRIPT = `
+    <script>
+        // 1. Приглушуємо помилки в консолі
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+            originalWarn.apply(console, args);
+        };
+        const originalError = console.error;
+        console.error = function(...args) {
+            // Ігноруємо помилку width(-1), бо ми її виправимо автоматично
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('width(-1)')) return;
+            originalError.apply(console, args);
+        };
 
+        // 2. Спостерігач (ResizeObserver)
+        // Як тільки body змінює розмір (наприклад, завантажився CSS), ми посилаємо сигнал resize.
+        // Recharts слухає цей сигнал і перемальовується коректно.
+        window.addEventListener('DOMContentLoaded', () => {
+            const ro = new ResizeObserver(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+            ro.observe(document.body);
+            
+            // Додаткова перестраховка через 100мс і 500мс
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 500);
+        });
+    </script>
+`;
+
+// --- ШАБЛОН IFRAME ---
 const IFRAME_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>${CORE_CSS}</style>
     <style>${SHADCN_STYLES}</style>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         window.tailwind = {
             config: {
@@ -251,6 +275,7 @@ const IFRAME_HTML = `<!DOCTYPE html>
             }
         }
     </script>
+    ${CHART_FIX_SCRIPT}
 </head>
 <body><div id="root"></div></body>
 </html>`;
@@ -260,7 +285,6 @@ interface PreviewProps {
     renderKey: number;
 }
 
-// --- 3. ГОЛОВНИЙ КОМПОНЕНТ ---
 function PreviewFrame({ code, renderKey }: PreviewProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
@@ -270,49 +294,27 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
     );
     const [iframeReady, setIframeReady] = useState(false);
 
-    // Функція для ін'єкції глобальних змінних
     const injectGlobals = (win: any) => {
         if (!win) return;
         win.PreviewUI = UI_REGISTRY;
-
-        // ВАЖЛИВО: Робимо хуки доступними глобально, щоб працював код без import { useRef } from 'react'
         win.React = UI_REGISTRY.React;
-        win.useState = UI_REGISTRY.React.useState;
-        win.useEffect = UI_REGISTRY.React.useEffect;
-        win.useRef = UI_REGISTRY.React.useRef;
-        win.useMemo = UI_REGISTRY.React.useMemo;
-        win.useCallback = UI_REGISTRY.React.useCallback;
-        win.useContext = UI_REGISTRY.React.useContext;
-        win.useReducer = UI_REGISTRY.React.useReducer;
-        win.useLayoutEffect = UI_REGISTRY.React.useLayoutEffect;
+        [
+            "useState",
+            "useEffect",
+            "useRef",
+            "useMemo",
+            "useCallback",
+            "useContext",
+            "useReducer",
+            "useLayoutEffect",
+        ].forEach((hook) => (win[hook] = (UI_REGISTRY.React as any)[hook]));
     };
 
     const handleIframeLoad = (
         e: React.SyntheticEvent<HTMLIFrameElement, Event>
     ) => {
         const iframe = e.currentTarget;
-        const win = iframe.contentWindow;
-        const doc = iframe.contentDocument;
-
-        if (win && doc) {
-            injectGlobals(win);
-            const root = doc.getElementById("root");
-            if (root) {
-                setMountNode(root);
-                setIframeReady(true);
-            }
-        }
-    };
-
-    // Fallback для повторного завантаження
-    useEffect(() => {
-        const iframe = iframeRef.current;
-        if (
-            iframe &&
-            iframe.contentDocument &&
-            !iframeReady &&
-            iframe.contentDocument.readyState === "complete"
-        ) {
+        if (iframe.contentWindow && iframe.contentDocument) {
             injectGlobals(iframe.contentWindow);
             const root = iframe.contentDocument.getElementById("root");
             if (root) {
@@ -320,9 +322,9 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
                 setIframeReady(true);
             }
         }
-    }, []);
+    };
 
-    // Виконання коду (Eval)
+    // Обробка коду
     useEffect(() => {
         if (!code || !iframeReady || !mountNode || !iframeRef.current) return;
         const win = iframeRef.current.contentWindow as any;
@@ -330,25 +332,15 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
 
         try {
             setError(null);
-
-            // Скидаємо попередні експорти
             win.DefaultExport = undefined;
             win.LastExportedComponent = undefined;
 
-            // Виконуємо код у try-catch блоці (це ловить синтаксичні помилки та reference errors)
             win.eval(code);
 
             const Exported = win.DefaultExport || win.LastExportedComponent;
-
-            if (Exported) {
-                setComponent(() => Exported);
-            } else {
-                console.warn("No export found");
-                // Не ставимо помилку, можливо код просто пустий або ще пишеться
-            }
+            if (Exported) setComponent(() => Exported);
         } catch (err: any) {
             console.error("Eval Error:", err);
-            // Виводимо помилку гарно, а не крашимо додаток
             setError(err.message);
             setComponent(null);
         }
@@ -364,31 +356,21 @@ function PreviewFrame({ code, renderKey }: PreviewProps) {
                 title="preview"
                 sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-forms"
             />
-
-            {/* Шар помилок Eval (Синтаксис) */}
             {error && (
                 <div className="absolute inset-0 z-50 bg-white/95 flex items-start justify-center pt-20 p-4">
-                    <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
-                            <AlertTriangle className="w-5 h-5" />
-                            <span>Compilation Error</span>
-                        </div>
-                        <pre className="text-xs text-red-800 whitespace-pre-wrap break-words font-mono">
-                            {error}
-                        </pre>
+                    <div className="max-w-md w-full bg-red-50 border border-red-200 rounded p-4 text-xs text-red-800 font-mono whitespace-pre-wrap">
+                        <strong>Compilation Error:</strong>
+                        <br />
+                        {error}
                     </div>
                 </div>
             )}
-
-            {/* Рендер через Portal + ErrorBoundary */}
             {mountNode &&
                 Component &&
                 !error &&
                 createPortal(
                     <ErrorBoundary resetKey={renderKey}>
-                        <div key={renderKey} className="min-h-full">
-                            <Component />
-                        </div>
+                        <Component />
                     </ErrorBoundary>,
                     mountNode
                 )}
