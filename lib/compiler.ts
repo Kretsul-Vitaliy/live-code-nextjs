@@ -191,6 +191,7 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
     visitor: {
         ExportDefaultDeclaration(path: any) {
             const decl = path.node.declaration;
+            // ... (ваша існуюча логіка заміни export default на window.DefaultExport =)
             if (t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl)) {
                 if (decl.id) {
                     const assignment = t.expressionStatement(
@@ -232,11 +233,11 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
             }
         },
         ExportNamedDeclaration(path: any) {
+            // ... (ваша існуюча логіка для іменованих експортів)
             if (path.node.declaration) {
                 const decl = path.node.declaration;
                 path.replaceWith(decl);
 
-                // Логіка для пошуку імені компонента
                 let id = null;
                 if (t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl))
                     id = decl.id;
@@ -247,7 +248,6 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
                     id = decl.declarations[0].id;
 
                 if (id) {
-                    // 1. Реєструємо як LastExportedComponent (резерв)
                     const assignment = t.expressionStatement(
                         t.assignmentExpression(
                             "=",
@@ -260,10 +260,17 @@ const HandleExportsPlugin = ({ types: t }: any) => ({
                     );
                     path.insertAfter(assignment);
 
-                    // 2. ВАЖЛИВО: Якщо ім'я компонента "App", "Page" або "Main" - робимо його дефолтним примусово
-                    // Це дозволяє писати "export function Page() {}" без default
+                    // Логіка для примусового дефолту
                     if (
-                        ["App", "Page", "Main", "Component"].includes(id.name)
+                        [
+                            "App",
+                            "Page",
+                            "Main",
+                            "Component",
+                            "Projectgridsection",
+                            "Projecthighlightsection",
+                        ].includes(id.name) ||
+                        id.name.endsWith("section")
                     ) {
                         const defaultAssignment = t.expressionStatement(
                             t.assignmentExpression(
@@ -307,7 +314,12 @@ export const compileCode = (code: string) => {
                 [HandleExportsPlugin, { types: (Babel as any).types }],
             ],
         });
-        return { code: result.code, error: null };
+        const scopedCode = `
+        {
+            ${result.code}
+        }
+        `;
+        return { code: scopedCode, error: null };
     } catch (error: any) {
         console.error("Compilation Error:", error);
         return { code: null, error: error.message };
